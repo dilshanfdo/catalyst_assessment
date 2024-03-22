@@ -4,7 +4,6 @@ require_once "db_config.php";
 $short_options = "u::p::h::";
 $long_options = ["file::", "db::", "create_table", "dry_run", "help"];
 $options = getopt($short_options, $long_options);
-var_dump($options);
 
 $isOK = true;
 $username = "";
@@ -12,6 +11,15 @@ $password = "";
 $host = "";
 $file = "";
 $db = "catalyst";
+$table = "users";
+$indexName = "user_index";
+$indexFields = "email";
+$tableStructure = "(
+  id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(30) NOT NULL,
+  surname VARCHAR(30) NOT NULL,
+  email VARCHAR(50) NOT NULL UNIQUE
+)";
 
 function showHelp(){
   printf("\n           *************  HELP  ****************");
@@ -39,6 +47,20 @@ function showHelp(){
   printf("\n                                               --create_table");
   printf("\n --dry_run        | -u -p -h --db --file    | run the script but not insert into the database ");
   printf("\n                                               --dry_run");
+}
+
+function executeStepsToCreateTable(){
+  printf("\n Connecting to the database server...");
+  $dbConnection = createDatabaseConnection($GLOBALS['username'], $GLOBALS['password'], $GLOBALS['host'], $GLOBALS['db']);
+  if($dbConnection){
+    $tableCreated = createTable($dbConnection, $GLOBALS['table'], $GLOBALS['tableStructure']);
+    if($tableCreated){
+      $indexCreated = createIndex($dbConnection, $GLOBALS['table'], $GLOBALS['indexName'], $GLOBALS['indexFields']);
+      if($indexCreated){
+        return true;
+      }
+    }
+  }
 }
 
 if(array_key_exists("help", $options)){
@@ -84,41 +106,40 @@ else {
     $GLOBALS['db'] = $options["db"];
   } 
   
-  if(!$GLOBALS['isOK']) {
-    exit("ERROR - CLIarguments username(-u), password(-p), host(-h) and file(--file) required. Type --help for more information");
-  }
-  else {
-    try {
-      $connection = new mysqli($GLOBALS['host'], $GLOBALS['username'], $GLOBALS['password']);
-      printf("\n Successfully connected to the database server.");
-      if(isDatabaseExist($connection, $GLOBALS['db'])){
-        printf("\n Database '" .$GLOBALS['db']. "' exist");
+  if($GLOBALS['isOK']) {
+    if(array_key_exists("create_table", $options) && array_key_exists("dry_run", $options)){
+      exit("\n ERROR - Can not contain CLIarguments --create_table and --dry_run at the same time. Either of them can be executed. Type --help for more information");
+    }
+    elseif(array_key_exists("create_table", $options)){
+      printf("\n Executing create_table");
+      printf("\n **********************");
+      echo "\n";
+
+      if(executeStepsToCreateTable()){
+        printf("\n Data insertion can be done");
       }
-      else {
-        printf("\n Database not exist");
-        createDatabase($connection, $GLOBALS['db']);
+    }  
+    elseif(array_key_exists("dry_run", $options)){
+      printf("\n Executing dry_run");
+      printf("\n *****************");
+      echo "\n";
+
+      if(executeStepsToCreateTable()){
+        printf("\n Data insertion can be done");
       }
-      $connection->close();
-    } catch (Exception $e) {
-      printf("\n Connection failed: " .$e->getMessage());
+    }
+    else {
+      printf("\n Executing full script");
+      printf("\n *********************");
+      echo "\n";
+      if(executeStepsToCreateTable()){
+        printf("\n Data insertion can be done");
+      }
     }    
   }
-
-  //  check both create_table and dry_run args are exist
-  if(array_key_exists("create_table", $options) && array_key_exists("dry_run", $options)){
-    exit("\n ERROR - Can not contain CLIarguments --create_table and --dry_run at the same time. Either of them can be executed. Type --help for more information");
+  else { 
+    exit("ERROR - CLIarguments username(-u), password(-p), host(-h) and file(--file) required. Type --help for more information");
   }
-  elseif(array_key_exists("create_table", $options)){
-    echo ("\n create table");
-    $dbConnection = createDatabaseConnection($GLOBALS['username'], $GLOBALS['password'], $GLOBALS['host'], $GLOBALS['db']);
-  }  
-  elseif(array_key_exists("dry_run", $options)){
-    echo ("\n dry run");
-  }
-  else {
-    echo ("\n insert data into db");
-  }
-    
-  // echo "boom";
 }
+
 ?>
