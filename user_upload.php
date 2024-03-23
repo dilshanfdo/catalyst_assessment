@@ -14,6 +14,7 @@ $db = "catalyst";
 $table = "users";
 $indexName = "user_index";
 $indexFields = "email";
+$dbConnection; 
 $tableStructure = "(
   id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(30) NOT NULL,
@@ -47,20 +48,36 @@ function showHelp(){
   printf("\n                                               --create_table");
   printf("\n --dry_run        | -u -p -h --db --file    | run the script but not insert into the database ");
   printf("\n                                               --dry_run");
+  printf("\n no command       | -u -p -h --db --file    | run the script and insert into the database ");
+  
 }
 
 function executeStepsToCreateTable(){
   printf("\n Connecting to the database server...");
-  $dbConnection = createDatabaseConnection($GLOBALS['username'], $GLOBALS['password'], $GLOBALS['host'], $GLOBALS['db']);
-  if($dbConnection){
-    $tableCreated = createTable($dbConnection, $GLOBALS['table'], $GLOBALS['tableStructure']);
+  $GLOBALS['dbConnection'] = createDatabaseConnection($GLOBALS['username'], $GLOBALS['password'], $GLOBALS['host'], $GLOBALS['db']);
+  if($GLOBALS['dbConnection']){
+    $tableCreated = createTable($GLOBALS['dbConnection'], $GLOBALS['table'], $GLOBALS['tableStructure']);
     if($tableCreated){
-      $indexCreated = createIndex($dbConnection, $GLOBALS['table'], $GLOBALS['indexName'], $GLOBALS['indexFields']);
-      if($indexCreated){
-        return true;
-      }
+      return true;
+      // $indexCreated = createIndex($GLOBALS['dbConnection'], $GLOBALS['table'], $GLOBALS['indexName'], $GLOBALS['indexFields']);
+      // if($indexCreated){
+      //   return true;
+      // }
     }
   }
+}
+
+function validateData($data){
+  if(filter_var($data[2], FILTER_VALIDATE_EMAIL)){
+    $atPos = mb_strpos($data[2], '@');
+    $domain = mb_substr($data[2], $atPos + 1);
+    if (checkdnsrr($domain, 'MX')) {
+      $name = ucfirst(strtolower($data[0]));
+      $surname = ucfirst(strtolower($data[1]));
+      $email = strtolower($data[2]);
+      return array($name, $surname, $email);     
+    }    
+  }  
 }
 
 if(array_key_exists("help", $options)){
@@ -112,28 +129,54 @@ else {
     }
     elseif(array_key_exists("create_table", $options)){
       printf("\n Executing create_table");
-      printf("\n **********************");
+      printf("\n ----------------------");
       echo "\n";
 
       if(executeStepsToCreateTable()){
-        printf("\n Data insertion can be done");
+        
       }
     }  
     elseif(array_key_exists("dry_run", $options)){
       printf("\n Executing dry_run");
-      printf("\n *****************");
+      printf("\n -----------------");
       echo "\n";
 
       if(executeStepsToCreateTable()){
-        printf("\n Data insertion can be done");
+        $file = fopen($GLOBALS['file'], 'r');
+        $count = 0;
+        while (($data = fgetcsv($file)) !== FALSE) { 
+          $count++ ;
+          if ($count == 1) { continue; }
+          $validatedData = validateData($data);
+          if($validatedData) {
+            printf("\n $validatedData[0]    $validatedData[1]     $validatedData[2]");
+          }
+          else {
+            printf("\n Error");
+          }
+        }
       }
     }
     else {
       printf("\n Executing full script");
-      printf("\n *********************");
+      printf("\n ---------------------");
       echo "\n";
+
       if(executeStepsToCreateTable()){
-        printf("\n Data insertion can be done");
+        $file = fopen($GLOBALS['file'], 'r');
+        $count = 0;
+        while (($data = fgetcsv($file)) !== FALSE) { 
+          $count++ ;
+          if ($count == 1) { continue; }
+          $validatedData = validateData($data);
+          if($validatedData) {
+            insertDataIntoTable($GLOBALS['dbConnection'], $GLOBALS['table'], $validatedData);
+          }
+          else {
+            $stdout = fopen('php://stdout', 'w');
+            printf("\n $data[0] $data[1]  $data[2] record could not insert. $data[2] is not a valid email");
+          }
+        }
       }
     }    
   }

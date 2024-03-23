@@ -103,13 +103,15 @@
     }    
   }
 
-  function isIndexExist($dbConnection, $tableName){
+  function isIndexExist($dbConnection, $tableName, $indexName){
     printf("\n Checking '$tableName' table has any index...");
     try {
-      $result = $dbConnection->query("SHOW INDEX FROM " .$tableName);
+      $result = $dbConnection->query("SHOW INDEX FROM " .$tableName. " WHERE key_name = 'user_index'");
       if($result !== 0){
+        echo "\n INSIDE IF";
         return true;
       }
+      echo "\n INSIDE IF";
       return false;
     } catch (Exception $e) {
       printf("\n Connection failed: " .$e->getMessage());
@@ -117,29 +119,68 @@
   }
 
   function createIndex($dbConnection, $tableName, $indexName, $indexFields) {
-    if(isIndexExist($dbConnection, $tableName)){
-      printf("\n Index exist");
-      return true;
+    printf("\n Creating index '$indexName' to '$tableName' table...");
+    try {
+      $result = $dbConnection->query("ALTER TABLE " .$tableName. " ADD INDEX " .$indexName. " (" .$indexFields. ")");
+      if($result !== 0){
+        print ("\n Index created successfully");
+        return true;
+      } 
+      else {
+        printf("\n Could not create index");
+        return false;
+      }  
+    } catch (Exception $e) {
+      printf("\n Could not create index: " .$e->getMessage());
     }
-    else {
-      printf("\n Index not exist");    
-      printf("\n Creating index '$indexName' to '$tableName' table...");
-      try {
-        $result = $dbConnection->query("ALTER TABLE " .$tableName. " ADD INDEX " .$indexName. " (" .$indexFields. ")");
-        if($result !== 0){
-          print ("\n Index created successfully");
-        } 
-        else {
-          printf("\n Could not create index");
-        }  
-      } catch (Exception $e) {
-        printf("\n Could not create index: " .$e->getMessage());
+
+    // if(isIndexExist($dbConnection, $tableName, $indexName)){
+    //   printf("\n Index exist");
+    //   return true;
+    // }
+    // else {
+    //   printf("\n Index not exist");    
+    //   printf("\n Creating index '$indexName' to '$tableName' table...");
+    //   try {
+    //     $result = $dbConnection->query("ALTER TABLE " .$tableName. " ADD INDEX " .$indexName. " (" .$indexFields. ")");
+    //     if($result !== 0){
+    //       print ("\n Index created successfully");
+    //       return true;
+    //     } 
+    //     else {
+    //       printf("\n Could not create index");
+    //       return false;
+    //     }  
+    //   } catch (Exception $e) {
+    //     printf("\n Could not create index: " .$e->getMessage());
+    //   }
+    // }
+  }
+
+  function insertDataIntoTable($dbConnection, $tableName, $data){
+    foreach($data as $key => $value){
+      if(str_contains($value, "'")){
+        $data[$key] = str_replace("'", "''", $value);
       }
+    }
+    try {
+      $result = $dbConnection->query("SELECT * FROM $tableName WHERE email = '$data[2]'");
+      if($result->num_rows == 0){
+        try {
+          $dbConnection->query("INSERT INTO $tableName (name, surname, email) VALUES ('" .$data[0]. "', '" .$data[1]. "', '" .$data[2]. "')");
+        } catch (EXception $e) {
+          printf("\n Could not insert data: " .$e->getMessage());
+        }
+      }
+      else {
+        printf("\n $data[0]   $data[1]    $data[2] record could not insert. Email already exist");
+      }
+    } catch (Exception $e) {
+      printf("\n Connection failed: " .$e->getMessage());
     }
   }
 
   function closeDatabaseConnection($dbConnection){
     $dbConnection->close();
   }
-
-  ?>
+?>
