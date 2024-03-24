@@ -2,7 +2,7 @@
 
   function isDatabaseExist($connection, $dbName){
     try {
-      $result = $connection->query("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '" .$dbName. "'");
+      $result = $connection->query("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$dbName'");
       if(mysqli_num_rows($result) !== 0){
         return true;
       }
@@ -14,7 +14,7 @@
 
   function createDatabase($connection, $dbName) {
     try{
-      $result = $connection->query("CREATE DATABASE ".$dbName);
+      $result = $connection->query("CREATE DATABASE $dbName");
       if($result !== 0){
         printf("\n Database created successfully");
       }
@@ -89,7 +89,7 @@
       //  Create table 
       try {
         printf("\n Creating '$tableName' table...");
-        $result = $dbConnection->query("CREATE TABLE " .$tableName. " " .$tableStructure);
+        $result = $dbConnection->query("CREATE TABLE $tableName $tableStructure");
         if ($result !== 0) { 
           printf("\n Table created successfully");         
           return true;
@@ -106,7 +106,7 @@
   function isIndexExist($dbConnection, $tableName, $indexName){
     printf("\n Checking '$tableName' table has any index...");
     try {
-      $result = $dbConnection->query("SHOW INDEX FROM " .$tableName. " WHERE key_name = 'user_index'");
+      $result = $dbConnection->query("SHOW INDEX FROM $tableName WHERE key_name = '$indexName'");
       if($result !== 0){
         echo "\n INSIDE IF";
         return true;
@@ -121,7 +121,7 @@
   function createIndex($dbConnection, $tableName, $indexName, $indexFields) {
     printf("\n Creating index '$indexName' to '$tableName' table...");
     try {
-      $result = $dbConnection->query("ALTER TABLE " .$tableName. " ADD INDEX " .$indexName. " (" .$indexFields. ")");
+      $result = $dbConnection->query("ALTER TABLE $tableName ADD INDEX $indexName ($indexFields)");
       if($result !== 0){
         print ("\n Index created successfully");
         return true;
@@ -142,7 +142,7 @@
     //   printf("\n Index not exist");    
     //   printf("\n Creating index '$indexName' to '$tableName' table...");
     //   try {
-    //     $result = $dbConnection->query("ALTER TABLE " .$tableName. " ADD INDEX " .$indexName. " (" .$indexFields. ")");
+    //     $result = $dbConnection->query("ALTER TABLE $tableName ADD INDEX $indexName ($indexFields)");
     //     if($result !== 0){
     //       print ("\n Index created successfully");
     //       return true;
