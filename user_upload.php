@@ -44,12 +44,12 @@ function showHelp(){
   printf("\n");
   printf("\n      arg         |   Required Properties   |   Description");
   printf("\n --------------------------------------------------------------------");
-  printf("\n --create_table   | -u -p -h --db --file    | create the table ");
+  printf("\n --create_table   | -u -p -h --db --file    | Create the table ");
   printf("\n                                               --create_table");
-  printf("\n --dry_run        | -u -p -h --db --file    | run the script but not insert into the database ");
+  printf("\n --dry_run        | -u -p -h --db --file    | Run the script but the data is not inserted in to the database ");
   printf("\n                                               --dry_run");
-  printf("\n no command       | -u -p -h --db --file    | run the script and insert into the database ");
-  
+  printf("\n no command       | -u -p -h --db --file    | Run the script and insert filtered data in to the database ");
+  printf("\n --help           |       Not Required      | Display the help");
 }
 
 function executeStepsToCreateTable(){
